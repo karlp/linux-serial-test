@@ -16,6 +16,7 @@
 
 // command line args
 int _cl_baud = 0;
+char _cl_parity = 'n';
 char *_cl_port = NULL;
 int _cl_divisor = 0;
 int _cl_rx_dump = 0;
@@ -134,6 +135,7 @@ void display_help()
 			"\n"
 			"  -h, --help\n"
 			"  -b, --baud        Baud rate, 115200, etc (115200 is default)\n"
+			"  -P, --parity      Parity (e,o,n) (defaults to n)\n"
 			"  -p, --port        Port (/dev/ttyS0, etc) (must be specified)\n"
 			"  -d, --divisor     UART Baud rate divisor (can be used to set custom baud rates\n"
 			"  -R, --rx_dump     Dump Rx data (ascii, raw)\n"
@@ -160,10 +162,11 @@ void process_options(int argc, char * argv[])
 {
 	for (;;) {
 		int option_index = 0;
-		static const char *short_options = "hb:p:d:R:TsSy:z:certlq:";
+		static const char *short_options = "hb:P:p:d:R:TsSy:z:certlq:";
 		static const struct option long_options[] = {
 			{"help", no_argument, 0, 0},
 			{"baud", required_argument, 0, 'b'},
+			{"parity", required_argument, 0, 'P'},
 			{"port", required_argument, 0, 'p'},
 			{"divisor", required_argument, 0, 'd'},
 			{"rx_dump", required_argument, 0, 'R'},
@@ -196,6 +199,9 @@ void process_options(int argc, char * argv[])
 			break;
 		case 'b':
 			_cl_baud = atoi(optarg);
+			break;
+		case 'P':
+			_cl_parity = optarg[0];
 			break;
 		case 'p':
 			_cl_port = strdup(optarg);
@@ -352,6 +358,14 @@ void setup_serial_port(int baud)
 	newtio.c_iflag = 0;
 	newtio.c_oflag = 0;
 	newtio.c_lflag = 0;
+
+	if (_cl_parity != 'n') {
+		newtio.c_oflag |= PARENB;
+		if (_cl_parity == 'o') {
+			newtio.c_oflag |= PARODD;
+		}
+	}
+
 
 	// block for up till 128 characters
 	newtio.c_cc[VMIN] = 128;
